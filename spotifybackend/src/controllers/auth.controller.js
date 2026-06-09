@@ -28,7 +28,7 @@ const regUser = async (req,res) => {
 const logUser = async (req,res) => {
     const {username,email,password} = req.body
  
-    if(!email || !username ){
+    if(!email && !username ){
         return res.status(400).json({message:"email/username is required"})
     }
     
