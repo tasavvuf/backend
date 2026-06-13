@@ -46,7 +46,8 @@ const logUser = async (req,res) => {
     }
     const token = jwt.sign({id:user._id},process.env.JWT_SECRET)
     res.cookie("token",token)
-    res.json({message:"user logedin and token stored"
+    res.json({message:"user logedin and token stored",
+        role : user.role
     })
 }
 
