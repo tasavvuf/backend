@@ -9,6 +9,7 @@ const upload = multer({storage:multer.memoryStorage()})
 const  authenticateUser = require("../middleware/authenticateUser.middleware.js")
 const requireArtist = require("../middleware/requireArtist.middleware.js")
 const { getMusic } = require("../controllers/getAllmusic.controller.js")
+const { getAlbum } = require("../controllers/getAlbum.controller.js")
 router.post("/upload", authenticateUser, requireArtist , upload.single("music"), uploadMusic)
 router.post("/add-album", authenticateUser, requireArtist , async (req, res) => {
     const { title, songs  } = req.body
@@ -24,5 +25,5 @@ router.post("/add-album", authenticateUser, requireArtist , async (req, res) => 
     }) 
 })
   router.get("/music",authenticateUser, getMusic )
-
+    router.get("/album",authenticateUser,getAlbum)
 module.exports = router
