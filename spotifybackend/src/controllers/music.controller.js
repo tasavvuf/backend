@@ -1,23 +1,10 @@
 const musicModel = require("../model/music.model.js");
-const userModel = require("../model/user.model")
 const imagekit = require("../service/imagekit.service.js");
-const jwt = require('jsonwebtoken')
 async function uploadMusic(req, res) {
-  const { tittle } = req.body;
+  const title = req.body.title || req.body.tittle;
   const file = req.file;
-  const token = req.cookies.token
-  if (!token) {
-    return res.status(401).send("you are no a user log in / register ")
-  }
   try {
-   const decoded = jwt.verify(token , process.env.JWT_SECRET)
-   const user =  await userModel.findById(decoded.id) 
-   if(user.role !== "artist"){
-    return res.status(403).json({
-        message:"Only artists can upload songs"
-    })
-}
-    
+ 
   if(!file){
     return res.status(400).send("no file added ")
   }
@@ -32,10 +19,10 @@ async function uploadMusic(req, res) {
     });
    
     const data =  await musicModel.create({
-        title : result.name,
+        title : title,
         uri : result.url , 
         duration : result.duration,
-        artist : decoded.id
+        artist : req.userid
     })
     res.json({data})
   } catch (error) {
