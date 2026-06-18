@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Socket Practice</title>
+</head>
+<body>
+    <h1>Socket.io Practice</h1>
+
+    <!-- Load socket.io from backend automatically -->
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    
+    <script>
+        // Connect to backend
+        const socket = io("http://localhost:3000")
+
+        socket.on("connect", () => {
+            console.log("Connected to server! My ID:", socket.id)
+        })
+
+        socket.on("disconnect", () => {
+            console.log("Disconnected from server")
+        })
+    </script>
+</body>
+</html>
