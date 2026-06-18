@@ -8,8 +8,17 @@
     <body>
         <h1>Socket.io chat</h1>
             <div style="display: flex; gap: 5px;">
+                <input type="text" id="room" placeholder="enter a room name like room1 " >
+                <button onclick="joinroom()">send</button>
+                 <button onclick="leaveroom()"> leave room </button>
+                <select id="myDropdown">
+                   
+                    </select>
+            </div>
+            <div style="display: flex; gap: 5px;">
                 <input type="text" id="inp" >
                 <button onclick="sendmessage()">send</button>
+                
             </div>
             
             <p id="content"></p>
@@ -17,7 +26,9 @@
         <script>
             // Connect to backend
             const socket = io("http://localhost:3000")
-
+             const dropdown = document.getElementById("myDropdown");
+            const parent = document.getElementById("content")
+            let currentRoom = ""
             socket.on("connect", () => {
                 console.log("Connected to server! My ID:", socket.id)
             })
@@ -25,19 +36,36 @@
                 console.log("sending message")
                const inp =  document.querySelector("#inp")
                console.log(inp.value)
-               try {
-                        socket.emit("message",{
+               
+                socket.emit("message",{
+                 room: currentRoom,
                 text : inp.value,
                 Cfrom : socket.id,
                 timestamp : new Date().toLocaleTimeString()
             })
-               } catch (error) {
+              
                 console.log(error)
-               }
-        
+
             }
+
+          function joinroom() {
+    const room = document.getElementById("room").value;
+
+    socket.emit("join_room", room);
+            currentRoom = room
+
+    const newOpt = new Option(room, room);
+
+    dropdown.add(newOpt);
+    parent.innerHTML = ""
+}
+function leaveroom() {
+    socket.emit("leave_room", currentRoom);
+}
+    dropdown.addEventListener("change", () => {
+    socket.emit("join_room", dropdown.value);
+})
         socket.on("rmessage",(data)=>{
-            const parent = document.getElementById("content")
                let content =  document.createElement("div")            
             content.innerText = `${data.Cfrom} : ${data.text} , at ${data.timestamp}`
             parent.append(content)
