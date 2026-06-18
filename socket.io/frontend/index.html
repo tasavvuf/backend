@@ -1,31 +1,50 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Socket Practice</title>
-</head>
-<body>
-    <h1>Socket.io Practice</h1>
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Socket Practice</title>
+        <script src="http://localhost:3000/socket.io/socket.io.js"></script>
 
-    <!-- Load socket.io from backend automatically -->
-    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
-    
-    <script>
-        // Connect to backend
-        const socket = io("http://localhost:3000")
+    </head>
+    <body>
+        <h1>Socket.io chat</h1>
+            <div style="display: flex; gap: 5px;">
+                <input type="text" id="inp" >
+                <button onclick="sendmessage()">send</button>
+            </div>
+            
+            <p id="content"></p>
+        
+        <script>
+            // Connect to backend
+            const socket = io("http://localhost:3000")
 
-        socket.on("connect", () => {
-            console.log("Connected to server! My ID:", socket.id)
+            socket.on("connect", () => {
+                console.log("Connected to server! My ID:", socket.id)
+            })
+             function sendmessage() {
+                console.log("sending message")
+               const inp =  document.querySelector("#inp")
+               console.log(inp.value)
+               try {
+                        socket.emit("message",{
+                text : inp.value,
+                Cfrom : socket.id,
+                timestamp : new Date().toLocaleTimeString()
+            })
+               } catch (error) {
+                console.log(error)
+               }
+        
+            }
+        socket.on("rmessage",(data)=>{
+            const parent = document.getElementById("content")
+               let content =  document.createElement("div")            
+            content.innerText = `${data.Cfrom} : ${data.text} , at ${data.timestamp}`
+            parent.append(content)
         })
-        socket.emit("message",{
-            text : "hello",
-            from : "tasavvuf"
-        })
-        socket.on("receive_message",(data)=>{
-            console.log("client received ",data)
-        })
-        socket.on("disconnect", () => {
-            console.log("Disconnected from server")
-        })
-    </script>
-</body>
-</html>
+            socket.on("disconnect", () => {
+                console.log("Disconnected from server")
+            })
+        </script>
+    </body>
+    </html>

@@ -16,15 +16,18 @@ app.get("/", (_, res) => {
 });
 io.on("connection", (socket) => {
   console.log("user connected user id: ", socket.id);
+  try {
+      socket.on("message", (data) => {
+    console.log("data was reached to server" ,data);
 
-  socket.on("message", (data) => {
-    console.log(data);
-
-    socket.emit("receive_message", {
-      text: "server gets your message " + data.text,
-      timestamp: new Date().toLocaleTimeString(),
-    });
+    io.emit("rmessage", {
+       ...data
+    })
   });
+  } catch (error) {
+    console.log(error)
+  }
+
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
   });
