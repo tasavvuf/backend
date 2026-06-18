@@ -1,3 +1,4 @@
+const console = require('console')
 const express = require('express')
 const http = require('http')
 const { Server } = require('socket.io')
@@ -16,7 +17,9 @@ app.get("/",(_,res)=>{
 io.on("connection",(socket)=>{
 
     console.log("user connected user id: ",socket.id)
-
+    socket.on("message",(data)=>{
+        console.log(data)
+    })
     socket.on("disconnect", () => {
         console.log("User disconnected:", socket.id)
     })

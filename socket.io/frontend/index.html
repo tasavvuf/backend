@@ -16,6 +16,10 @@
         socket.on("connect", () => {
             console.log("Connected to server! My ID:", socket.id)
         })
+        socket.emit("message",{
+            text : "hello",
+            from : "tasavvuf"
+        })
 
         socket.on("disconnect", () => {
             console.log("Disconnected from server")
