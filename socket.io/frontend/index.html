@@ -1,78 +1,115 @@
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Socket Practice</title>
-        <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Tracker</title>
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+</head>
+<body>
 
-    </head>
-    <body>
-        <h1>Socket.io chat</h1>
-            <div style="display: flex; gap: 5px;">
-                <input type="text" id="room" placeholder="enter a room name like room1 " >
-                <button onclick="joinroom()">send</button>
-                 <button onclick="leaveroom()"> leave room </button>
-                <select id="myDropdown">
-                   
-                    </select>
-            </div>
-            <div style="display: flex; gap: 5px;">
-                <input type="text" id="inp" >
-                <button onclick="sendmessage()">send</button>
-                
-            </div>
-            
-            <p id="content"></p>
-        
-        <script>
-            // Connect to backend
-            const socket = io("http://localhost:3000")
-             const dropdown = document.getElementById("myDropdown");
-            const parent = document.getElementById("content")
-            let currentRoom = ""
-            socket.on("connect", () => {
-                console.log("Connected to server! My ID:", socket.id)
+<h1>Users Location Sharing Live</h1>
+
+<div>
+    <button onclick="sharelocation()">
+        Share Your Realtime Location Data
+    </button>
+
+    <button onclick="stopSharing()">
+        Stop Sharing
+    </button>
+</div>
+
+<p id="content"></p>
+
+<script>
+    const socket = io("http://localhost:3000")
+
+    let locationInterval
+
+    let t = document.getElementById("content")
+
+    // store all users' divs
+    let users = {}
+
+    socket.on("connect", () => {
+        console.log("Connected :", socket.id)
+    })
+
+    function sharelocation() {
+
+        if (!navigator.geolocation) {
+            alert("Geolocation not supported")
+            return
+        }
+
+        locationInterval = setInterval(() => {
+
+            navigator.geolocation.getCurrentPosition((postion) => {
+
+                const locationData = {
+                    lat: postion.coords.latitude,
+                    log: postion.coords.longitude
+                }
+
+                console.log(
+                    `user ${socket.id}'s location : ${locationData.lat}, ${locationData.log}`
+                )
+
+                socket.emit("locationGet", locationData)
+
             })
-             function sendmessage() {
-                console.log("sending message")
-               const inp =  document.querySelector("#inp")
-               console.log(inp.value)
-               
-                socket.emit("message",{
-                 room: currentRoom,
-                text : inp.value,
-                Cfrom : socket.id,
-                timestamp : new Date().toLocaleTimeString()
-            })
-              
-                console.log(error)
 
-            }
+        }, 3000)
+    }
 
-          function joinroom() {
-    const room = document.getElementById("room").value;
+    function stopSharing() {
+        clearInterval(locationInterval)
+        console.log("Location sharing stopped")
+        socket.disconnect()    }   
+socket.on("user_disconnected", (data) => {
 
-    socket.emit("join_room", room);
-            currentRoom = room
+    const id = data.id
 
-    const newOpt = new Option(room, room);
+    console.log("User disconnected:", id)
 
-    dropdown.add(newOpt);
-    parent.innerHTML = ""
-}
-function leaveroom() {
-    socket.emit("leave_room", currentRoom);
-}
-    dropdown.addEventListener("change", () => {
-    socket.emit("join_room", dropdown.value);
+    if (users[id]) {
+
+        users[id].remove()
+
+        delete users[id]
+
+        console.log(users)
+    }
 })
-        socket.on("rmessage",(data)=>{
-               let content =  document.createElement("div")            
-            content.innerText = `${data.Cfrom} : ${data.text} , at ${data.timestamp}`
-            parent.append(content)
-        })
-            socket.on("disconnect", () => {
-                console.log("Disconnected from server")
-            })
-        </script>
-    </body>
-    </html>
+
+
+    socket.on("BroadcastingLocationData", (data) => {
+
+        // create div only once for each user
+        if (!users[data.id]) {
+
+            let content = document.createElement("div")
+
+            content.style.border = "1px solid black"
+            content.style.padding = "10px"
+            content.style.margin = "10px"
+
+            t.append(content)
+
+            users[data.id] = content
+            console.log(users)
+        }
+
+        // update that user's own div
+        users[data.id].innerHTML = `
+            <strong>${data.id}</strong><br>
+            Latitude : ${data.lat}<br>
+            Longitude : ${data.log}<br>
+            Time : ${data.timestamp}
+        `
+    })
+</script>
+
+</body>
+</html>
