@@ -19,11 +19,27 @@ const regUser = async (req,res) => {
         return res.status(409).json({message:"User already exists with either same username or email"})
     }
     const hash = await bcrypt.hash(password,10)
+    
     const user = await userModel.create({username,email,password:hash,role})
-    const token = jwt.sign({id:user._id},process.env.JWT_SECRET)
-    res.cookie("token",token)
-    res.status(201).json({message:"user created and token stored",data:{username,password}
-    })
+    const refreshToken = jwt.sign({id:user._id},process.env.RFS_SECRET,{ expiresIn: "7d" })
+    const token = jwt.sign({id:user._id},process.env.JWT_SECRET,{expiresIn: "15m"})
+    const options = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+    }
+
+    user.refreshToken = refreshToken
+    await user.save()
+
+    res
+        .cookie("token", token, options)
+        .cookie("refreshToken", refreshToken, options)
+        .status(201)
+        .json({
+            message:"user created and tokens are stored",
+            data:{username,email,role},
+        })
 }
 const logUser = async (req,res) => {
     const {username,email,password} = req.body
@@ -44,13 +60,63 @@ const logUser = async (req,res) => {
     if(!verify) {
         return res.json({message:"wrong password"})
     }
-    const token = jwt.sign({id:user._id},process.env.JWT_SECRET)
-    res.cookie("token",token)
-    res.json({message:"user logedin and token stored",
-        role : user.role
-    })
+    const token = jwt.sign({id:user._id},process.env.JWT_SECRET,{expiresIn: "15s"})
+    const refreshToken =  jwt.sign({id:user._id},process.env.RFS_SECRET,{ expiresIn: '7d' })
+  const options = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax"
+};
+user.refreshToken = refreshToken;
+await user.save();
+res
+  .cookie("token", token, options)
+  .cookie("refreshToken", refreshToken, options)
+  .status(200)
+  .json({
+    message: "User logged in successfully.",
+    role: user.role,
+  }) 
+}
+const refreshTokens = async (req,res) =>{
+    const refreshToken = req.cookies.refreshToken
+     if(!refreshToken){
+        return res.status(401).send("you are not a user log in / register ")
+    }
+    try {
+        const decoded = jwt.verify(refreshToken , process.env.RFS_SECRET)
+        const user =  await userModel.findById(decoded.id) 
+        if(!user){
+            return res.status(401).send("Invalid token")
+        }
+    if (refreshToken !== user.refreshToken) {
+    return res.status(401).json({
+        message: "Invalid refresh token"
+    });
+}
+     const token = jwt.sign({id:user._id},process.env.JWT_SECRET,{expiresIn: "15s"})
+    const newrefreshToken =  jwt.sign({id:user._id},process.env.RFS_SECRET,{ expiresIn: '7d' })
+    const options = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax"};
+    user.refreshToken = newrefreshToken;
+    await user.save();
+    res
+  .cookie("token", token, options)
+  .cookie("refreshToken", newrefreshToken, options)
+  .status(200)
+  .json({
+    message: "Access token refreshed successfully.",
+  }) 
+            
+      
+    } catch (error) {
+        return res.status(401).send("Invalid token")
+    }
+    
 }
 
 module.exports = {
-    regUser , logUser
+    regUser , logUser , refreshTokens
 }

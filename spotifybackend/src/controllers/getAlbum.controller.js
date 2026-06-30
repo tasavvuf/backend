@@ -8,4 +8,4 @@ const getAlbum = async (req, res) => {
     })
 }
 
-module.exports = getAlbum
+module.exports = {getAlbum}
